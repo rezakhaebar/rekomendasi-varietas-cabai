@@ -1,0 +1,172 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chili Variety Recommender</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+      <h1 class="text-3xl font-bold text-center mb-8">
+        Chili Variety Recommender
+      </h1>
+
+      <div
+        class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl p-6"
+      >
+        <form id="recommendForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700"
+              >Altitude (meters)</label
+            >
+            <input
+              type="number"
+              name="altitude"
+              required
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700"
+              >Temperature (°C)</label
+            >
+            <input
+              type="number"
+              name="temperature"
+              required
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700"
+              >Water Need</label
+            >
+            <select
+              name="water_need"
+              required
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            >
+              <option value="Tinggi">Tinggi</option>
+              <option value="Sedang">Sedang</option>
+              <option value="Rendah">Rendah</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700"
+              >Sunlight Need</label
+            >
+            <select
+              name="sunlight_need"
+              required
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            >
+              <option value="Tinggi">Tinggi</option>
+              <option value="Sedang">Sedang</option>
+              <option value="Rendah">Rendah</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700"
+              >Land Condition</label
+            >
+            <select
+              name="land_condition"
+              required
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            >
+              <option value="Dataran rendah">Dataran Rendah</option>
+              <option value="Dataran menengah">Dataran Menengah</option>
+              <option value="Dataran tinggi">Dataran Tinggi</option>
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Get Recommendations
+          </button>
+        </form>
+
+        <div id="results" class="mt-8 hidden">
+          <h2 class="text-xl font-semibold mb-4">Recommendations:</h2>
+          <div id="recommendationsList" class="space-y-4">
+            <!-- Results will be inserted here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document
+        .getElementById("recommendForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const formData = new FormData(e.target);
+          const data = {
+            altitude: formData.get("altitude"),
+            temperature: formData.get("temperature"),
+            water_need: formData.get("water_need"),
+            sunlight_need: formData.get("sunlight_need"),
+            land_condition: formData.get("land_condition"),
+          };
+
+          try {
+            const response = await fetch("/predict", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              const resultsList = document.getElementById(
+                "recommendationsList"
+              );
+              resultsList.innerHTML = "";
+
+              result.recommendations.forEach((rec, index) => {
+                const recDiv = document.createElement("div");
+                recDiv.className = "bg-gray-50 p-4 rounded-lg";
+                recDiv.innerHTML = `
+                            <h3 class="font-semibold text-lg">${index + 1}. ${
+                  rec.Varietas
+                }</h3>
+                            <p class="text-gray-600">Type: ${rec.Tipe}</p>
+                            <p class="text-gray-600">Productivity: ${
+                              rec.Produktivitas
+                            }</p>
+                            <p class="text-gray-600">Disease Resistance: ${
+                              rec.Ketahanan
+                            }</p>
+                            <p class="text-green-600">Similarity Score: ${
+                              rec.Similarity_Score
+                            }%</p>
+                        `;
+                resultsList.appendChild(recDiv);
+              });
+
+              document.getElementById("results").classList.remove("hidden");
+            } else {
+              alert("Error: " + result.error);
+            }
+          } catch (error) {
+            alert("Error submitting form: " + error);
+          }
+        });
+    </script>
+  </body>
+</html>
